@@ -134,17 +134,26 @@ def parse_date(d):
     assert 1 <= int(mo[3]) <= 23
     # 24.3. / 10h
     return f"2020-{int(mo[2]):02d}-{int(mo[1]):02d}T{int(mo[3]):02d}:00"
+  mo = re.search(r'^(\d\d\d\d-\d\d-\d\d)T?(\d\d:\d\d)(:\d\d)?$', d)
+  if mo:
+    # 2020-03-23T15:00:00
+    # 2020-03-23 15:00:00
+    # 2020-03-23 15:00
+    return f"{mo[1]}T{mo[2]}"
   assert False, f"Unknown date/time format: {d}"
 
 
 
 abbr=None
+url_sources=[]
 scrape_time=None
 date=None
 cases=None
 deaths=None
 recovered=None
 hospitalized=None
+icu=None
+vent=None
 
 try:
   i = 0
@@ -158,6 +167,9 @@ try:
       assert abbr.upper() == abbr, "The first line should be 2 letter abbreviation in upper case of the canton"
       continue
     k, v = l.split(": ")
+    if k.startswith("Downloading"):
+      url_sources.append(v)
+      continue
     if k.startswith("Scraped at"):
       scrape_time = v
       continue
@@ -176,9 +188,15 @@ try:
     if k.startswith("Hospitalized"):
       hospitalized = int(v)
       continue
+    if k.startswith("ICU"):
+      icu = int(v)
+      continue
+    if k.startswith("Vent"):
+      vent = int(v)
+      continue
     assert False, f"Unknown data on line {i}: {l}"
 
-  print("{:2} {:<16} {:>7} {:>7} OK {}".format(abbr, date, cases, deaths if not deaths is None else "-", scrape_time))
+  print("{:2} {:<16} {:>7} {:>7} OK {} {}".format(abbr, date, cases, deaths if not deaths is None else "-", scrape_time, ", ".join(url_sources)))
 
 except Exception as e:
   print("Error: %s" % e)
