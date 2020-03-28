@@ -111,6 +111,11 @@ def parse_date(d):
     assert 2020 <= int(mo[3]) <= 2021
     assert 1 <= int(mo[4]) <= 23
     return f"{int(mo[3]):4d}-{months_all[mo[2]]:02d}-{int(mo[1]):02d}T{int(mo[4]):02d}:00"
+  mo = re.search(r'^(\d+) ([^\W\d_]+) (20\d\d)$', d)
+  if mo:
+    # 21 mars 2020
+    assert 2020 <= int(mo[3]) <= 2021
+    return f"{int(mo[3]):4d}-{months_all[mo[2]]:02d}-{int(mo[1]):02d}T"
   mo = re.search(r'^(\d+)\.(\d+) à (\d+)h(\d\d)?$', d)
   if mo:
     # 20.03 à 8h00
@@ -186,13 +191,17 @@ try:
       scrape_time = v
       continue
     if k.startswith("Date and time"):
-      date = parse_date(v)
-      day = date.split("T", 2)[0].split('-', 3)
+      new_date = parse_date(v)
+      day = new_date.split("T", 2)[0].split('-', 3)
       day = datetime.date(int(day[0]), int(day[1]), int(day[2]))
       now = datetime.date.today()
       if day > now:
         print(f"Parsed date/time must not be in the future: parsed: {day}: now: {now}", file=sys.stderr)
         errs.append(f"Date {day} in the future")
+      # In case there are multiple "Date and time", use first one,
+      # or the one which is more specific (includes time).
+      if date is None or len(new_date) > len(date):
+        date = new_date
       continue
     if k.startswith("Confirmed cases"):
       try:
@@ -232,31 +241,52 @@ try:
       continue
     assert False, f"Unknown data on line {i}: {l}"
 
+  extras = {
+    # Actually cumulative.
+    'ncumul_released': recovered,
+    # Actually instantaneous, not cumulative.
+    # See, README.md
+    'ncumul_hosp': hospitalized,
+    'ncumul_ICU': icu,
+    'ncumul_vent': vent,
+  }
+  # Remove Nones
+  extras = {k: v for (k,v) in extras.items() if not v is None}
+  # Format k,v
+  extras = [f"{k}={v}" for (k,v) in extras.items()]
+  # Join into list.
+  extras = ",".join(extras)
+
+  urls = ", ".join(url_sources)
+
   if date and cases and not errs:
-    print("{:2} {:<16} {:>7} {:>7} OK {} {}".format(
+    print("{:2} {:<16} {:>7} {:>7} OK {}{}{}".format(
         abbr,
         date,
         cases,
         deaths if not deaths is None else "-",
         scrape_time,
-        ", ".join(url_sources)))
+        f" # Extras: {extras}" if extras else "",
+        f" # URLs: {urls}"))
   else:
     if not date:
       errs.append("Missing date")
     if not cases:
       errs.append("Missing cases")
     errs.extend(warns)
-    print("{:2} {:<16} {:>7} {:>7} FAILED {} {} # Errors: {}".format(
+    errs = ". ".join(errs)
+    print("{:2} {:<16} {:>7} {:>7} FAILED {} {}{}{}".format(
         abbr,
         date if date else "-",
         cases if not cases is None else "-",
         deaths if not deaths is None else "-",
         scrape_time if not scrape_time is None else "-",
-        ", ".join(url_sources),
-        ". ".join(errs)))
+        f" # Extras: {extras}" if extras else "",
+        f" # URLs: {urls}",
+        f" # Errors: {errs}"))
     sys.exit(1)
 
 except Exception as e:
-  print("{abbr} Error: {e}".format(abbr if abbr else '??', e))
+  print("{} Error: {}".format(abbr if abbr else '??', e))
   print(traceback.format_exc())
   sys.exit(1)
