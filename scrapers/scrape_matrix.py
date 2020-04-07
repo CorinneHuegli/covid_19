@@ -18,10 +18,7 @@ matrix = {
   'AR': ['Deaths'],
   'BE': ['Deaths', 'Hospitalized', 'ICU', 'Vent'],
   'BL': ['Deaths', 'Released'],
-  # BS: Technically there are Deaths numbers on website, but we don't scrape
-  # them at the moment (2020-04-04).
-  # See https://github.com/openZH/covid_19/issues/193 for details.
-  'BS': ['Released', 'Hospitalized', 'ICU'],
+  'BS': ['Deaths', 'Released', 'Hospitalized', 'ICU'],
   'FR': ['Deaths', 'Hospitalized', 'ICU'],
   'GE': ['Deaths', 'Hospitalized', 'ICU'],
   'GL': ['Deaths', 'Hospitalized'],
@@ -29,13 +26,13 @@ matrix = {
   'JU': ['Hospitalized', 'ICU'],
   'LU': ['Deaths', 'Hospitalized', 'ICU'],
   'NE': ['Deaths'],  # Currently broken.
-  'NW': ['Deaths'],  # Currently 0, but present.
-  'OW': [],
+  'NW': ['Deaths', 'Hospitalized', 'ICU'],
+  'OW': ['Deaths', 'Hospitalized'],
   'SG': ['Deaths', 'Released', 'Hospitalized', 'ICU'],
   'SH': ['Deaths', 'Hospitalized', 'ICU'],
   'SO': ['Deaths', 'Hospitalized'],
   'SZ': ['Deaths', 'Released'],
-  'TG': ['Deaths'],
+  'TG': ['Deaths', 'Hospitalized', 'ICU'],
   'TI': ['Deaths', 'Released', 'Hospitalized', 'ICU', 'Vent'],
   'UR': ['Deaths', 'Released', 'Hospitalized'],
   'VD': ['Deaths', 'Hospitalized', 'ICU'],
@@ -63,7 +60,7 @@ matrix_time = [
   'LU',
   'NW',
   # 'NE',  # Broken scraper.
-  # 'OW',  # Not available.
+  'OW',
   # 'SG',  # Not available.
   # 'SH',  # Not available.
   'SO',
